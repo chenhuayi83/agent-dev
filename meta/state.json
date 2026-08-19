@@ -4,10 +4,19 @@
   "run_count": 1,
   "pending": [],
   "current_deep_dive": null,
-  "recent_new_items": [12],
-  "counters": {"briefings": 1, "deep_dives": 1, "experiments": 0, "skills": 1, "interview_sets": 10, "interview_questions": 55},
+  "recent_new_items": [
+    12
+  ],
+  "counters": {
+    "briefings": 1,
+    "deep_dives": 1,
+    "experiments": 0,
+    "skills": 1,
+    "interview_sets": 12,
+    "interview_questions": 74
+  },
   "last_merge_ok": true,
   "source_rotation_cursor": 0,
-  "interview_library": "基础库 01-10 已建成(55 题),此后仅 P4 增量维护",
-  "notes": "2026-08-19 第二会话:协议升级 v1.1(双轨)→ v1.2(面试题转增量);面试题库由 9 个并行 subagent 一次建成并通过格式/链接验收"
+  "interview_library": "基础库 01-12 已建成(74 题:01-10 agent 工程与前沿 + 11 RAG + 12 大模型工程),此后仅 P4 增量维护",
+  "notes": "2026-08-19 第二会话:协议 v1.1(双轨)→ v1.2(面试题转增量);题库经国内面经覆盖面对标后补齐 RAG/大模型工程/框架实操/Prompt 工程"
 }

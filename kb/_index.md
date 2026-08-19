@@ -13,7 +13,7 @@
 
 - [上下文工程总览](01-context-engineering/overview.md) — 上下文是 agent 最稀缺的资源(growing)
 - [Compaction 与摘要](01-context-engineering/compaction-summarization.md) — 长会话的生存机制(stub)
-- [检索与 Agentic Search](01-context-engineering/retrieval-rag.md) — 从静态 RAG 到 agentic search(stub)
+- [检索与 Agentic Search](01-context-engineering/retrieval-rag.md) — 从静态 RAG 到 agentic search(growing)
 - [结构化输出](01-context-engineering/structured-outputs.md) — 让模型可靠输出 JSON/schema(stub)
 
 ## 02-frameworks 框架
