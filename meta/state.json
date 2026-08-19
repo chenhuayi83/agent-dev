@@ -1,11 +1,11 @@
 {
   "protocol_version": "1.0",
-  "last_run": null,
-  "run_count": 0,
-  "pending": ["P1", "P2", "P4", "P5", "P6"],
+  "last_run": "2026-08-19",
+  "run_count": 1,
+  "pending": [],
   "current_deep_dive": null,
-  "recent_new_items": [],
-  "counters": {"briefings": 0, "deep_dives": 0, "experiments": 0},
+  "recent_new_items": [12],
+  "counters": {"briefings": 1, "deep_dives": 1, "experiments": 0},
   "last_merge_ok": null,
   "source_rotation_cursor": 0
 }
