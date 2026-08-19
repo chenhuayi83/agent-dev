@@ -19,6 +19,7 @@ as-of 2026-08-19:
 - 形态:CLI + 桌面 + Web + IDE 插件;spring 2026 插件市场一等公民化
 - 近两周 CHANGELOG(2.1.231→2.1.235,as-of 08-19):**subagent forking 默认开启**(fork 继承完整会话与 cache)、`@` 提及其他会话(SendMessage 跨会话协作)、GitLab MR 支持、用量恢复自动续跑、spellcheck([CHANGELOG](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md))
 - 解读:多会话/多 agent 协作原语在 harness 层快速固化,与"编排下沉"趋势一致
+- 实战技能手册(用法向,与本文的观察向互补):[skills/claude-code/](../../skills/claude-code/01-core-workflow.md)
 
 ## 时间线
 

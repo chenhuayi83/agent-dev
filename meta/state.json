@@ -1,17 +1,12 @@
 {
-  "protocol_version": "1.0",
+  "protocol_version": "1.1",
   "last_run": "2026-08-19",
   "run_count": 1,
   "pending": [],
   "current_deep_dive": null,
-  "recent_new_items": [
-    12
-  ],
-  "counters": {
-    "briefings": 1,
-    "deep_dives": 1,
-    "experiments": 0
-  },
+  "recent_new_items": [12],
+  "counters": {"briefings": 1, "deep_dives": 1, "experiments": 0, "skills": 1, "interview_sets": 1},
   "last_merge_ok": true,
-  "source_rotation_cursor": 0
+  "source_rotation_cursor": 0,
+  "notes": "2026-08-19 第二会话:用户指令升级为双轨(协议 v1.1),产出 skills/claude-code/01 与 interview/01"
 }
