@@ -2,7 +2,7 @@
 last_updated: 2026-08-19
 type: interview
 topic: 框架与选型
-questions: 5
+questions: 7
 ---
 
 # 面试题:09 框架与选型
@@ -288,3 +288,158 @@ while True:
 - 追问:"怎么向 leader 证明选型合理?" → 答:交付两份东西——spike 的四个量化结果,以及一张风险登记表(每个候选的最大风险 + 缓解措施 + 触发重估的条件)。把决策变成**可复核的记录**,而不是个人品味。
 
 **关联**:[kb/02-frameworks/framework-selection.md](../kb/02-frameworks/framework-selection.md) · [kb/02-frameworks/other-frameworks.md](../kb/02-frameworks/other-frameworks.md) · [kb/10-landscape/ecosystem-map.md](../kb/10-landscape/ecosystem-map.md) · [kb/08-production/deployment-patterns.md](../kb/08-production/deployment-patterns.md)
+
+## Q6:LangChain 的核心抽象(LCEL / Runnable / Chain / Tool)是什么?它到底解决了什么问题、又带来什么成本?
+
+**考察点**:能否说出 Runnable 是**接口协议**而不是一堆类;能否讲清 LCEL 用什么换来了流式与并行;有没有抽象泄漏的实战意识。
+
+**30 秒版**:地基只有一个东西——**Runnable 协议**:所有组件实现同一组方法(`invoke`/`ainvoke`、`stream`/`astream`、`batch`/`abatch`),于是任意两个组件可互换、可拼接。**LCEL**(LangChain Expression Language)是协议之上的组合语法:`prompt | model | parser` 把组件拼成一个 `RunnableSequence`,结果**仍是 Runnable**(闭包性)。它解决的真问题是**接口碎片化**——统一协议后,流式、并行 batch、异步、重试、tracing 只在协议层实现一次,所有组件白拿。代价是声明式抽象的三笔税:**调试栈深、隐式 prompt、版本漂移**。判据一句话:**你的链是不是一条静态数据流**——是就用 LCEL;一旦出现循环、条件回退、持久状态,就该上 LangGraph(Q7)或裸写(Q2)。
+
+**深入版**:
+
+**一、Runnable 协议买到了什么**
+
+| 方法 | 语义 | 白拿到的能力 |
+|---|---|---|
+| `invoke` / `ainvoke` | 单输入单输出 | 同步与异步同构,调用方不改写法 |
+| `batch` / `abatch` | 一批输入 | 默认实现走线程池 / `asyncio.gather`,**IO 密集场景显著快于自己循环 invoke**(官方明确口径) |
+| `stream` / `astream` | 增量输出 | LCEL 链自动获得最终输出的流式 |
+
+一个区分性机制:**LCEL 的流式不是把最后一环的 token 转发出去**。`RunnableSequence` 会保留各组件的流式属性——只要链上每一环都实现了 `transform`(流入→流出),整条链就端到端流式;只要有一环必须收全才能算(典型是某些结构化 parser),流就在那里被截断。这解释了一个高频困惑:"为什么我中间加了一个节点就不流式了"。
+
+**二、组合语义与其余抽象**
+
+`|` 的本质是运算符重载:把左右两个 Runnable 合成新的 Runnable(等价于 `RunnableSequence(a, b)`,也有 `.pipe()` 方法)。dict 字面量被提升为并行分支(`RunnableParallel`),这是 LCEL 表达并行的方式;`.with_retry()` / `.with_fallbacks()` / `.bind()` / `.with_config()` 一类装饰器把横切关注点挂在协议层(具体 API 以官方文档为准,as-of 2026-08-19)。
+
+- **Tool** = 被规范化的外部能力(name + description + args schema):既能作为 tool_use 定义进上下文,也能当普通 Runnable 直接跑——**同一个对象两种消费方式**,这是协议统一的直接红利。
+- **Chain** 是历史遗产:1.0 之前那批 `LLMChain` / `RetrievalQA` 式的封装类把 prompt 写死在类里,正是"隐式 prompt"批评的源头。LCEL 的出现就是为了把它们拆开重写——**理解这段历史,才知道 LangChain 的抽象债是怎么欠下的**。
+
+**三、代价(三条,都可测)**
+
+1. **调试栈深**:一次 `invoke` 的异常要穿过多层 Runnable 包装,报错点离你写的代码很远。正解是挂 tracing 而不是读栈。可测指标同 Q2:能否 5 分钟内导出模型实际收到的完整请求体。
+2. **隐式 prompt**:高阶封装会替你注入系统提示、改写工具描述。**凡是你没亲手写却出现在上下文里的字符串,都是未来玄学 bug 的来源**。
+3. **版本漂移**:LangChain 1.0 / LangGraph 1.0 于 2025-10-22 GA,`langgraph.prebuilt` 弃用、能力并入 `langchain.agents`;网上大量教程仍停在 0.x 写法。引用 API 一律带 as-of。
+
+**实例**(同一条 RAG 链的两种写法):
+
+```python
+# LCEL:静态数据流 —— 一屏看完全貌,自动获得 stream / batch / async
+chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}  # dict = 并行分支
+    | prompt | model | StrOutputParser()
+)
+chain.invoke("电池怎么保修?")
+chain.batch(["Q1", "Q2", "Q3"])        # 并发交给协议层
+for tok in chain.stream("Q"): ...      # 端到端流式(前提:每一环都能 transform)
+
+# 裸写等价物:多三行,但上下文里每个字节都是你自己写的
+docs = retriever.invoke(q)
+msg  = PROMPT.format(context=format_docs(docs), question=q)
+ans  = client.messages.create(model=..., messages=[{"role": "user", "content": msg}])
+```
+差别不在行数,在于**并行/流式/重试是"白拿"还是"自己写"**。三条链以内裸写更省心;二十条形态相似的链且要统一 trace 口径时,协议层的复利才开始显现。
+
+**判据(适合 / 直接裸写)**:
+- **适合 LCEL**:多条形态相似的静态链;要统一流式与批处理;组件要可替换(换 embedding、换模型不动调用方);团队需要统一 trace 口径。
+- **直接裸写**:单条链且不需要流式;需要循环与条件回退(那是 Q7 的题);对上下文有极致掌控要求(prompt 每个字节自己拍板);团队里没人愿意读框架源码。
+
+**边界与误区**:
+- 误区:"LCEL 是个 DSL,要学一门新语言"。它只是运算符重载 + 一个接口协议,没有解释器也没有编译期,`|` 之后你拿到的还是普通 Python 对象。
+- 误区:"用 LCEL 写 agent"。LCEL 表达的是**有向无环的数据流**,天然没有循环与持久状态;agent loop 要么交给 LangGraph,要么用 `langchain.agents` 的预制体,要么裸写 while——这正是 1.0 把 agent 能力收敛到图上的原因。
+- 边界:LCEL 的并行是**分支并行**(同一输入喂多个下游),不是任务级调度;要控制并发度、失败隔离、部分成功,得往编排层走。
+
+**追问预判**:
+- 追问:"`|` 拼出来的链怎么调试?" → 答:三招——(a) 挂 tracing,看每一环的实际输入输出,而不是读异常栈;(b) 把链拆成命名子 Runnable 分段 `invoke`,二分定位;(c) 在可疑环节插一个透传的 `RunnableLambda` 打印中间值。核心认知:**声明式抽象必须配观测,否则不可维护**——这也是 LangSmith 与 LCEL 是同一套生意的原因。
+- 追问:"LCEL 和 LangGraph 重复吗?" → 答:不重复,是两层。LCEL 管**一条链内部的数据流组合**(DAG、无状态);LangGraph 管**跨步骤的控制流与状态**(可循环、可持久化、可中断)。常见形态是 LangGraph 的一个 node 内部跑一条 LCEL 链。判据还是那条:需要循环/状态/断点,就往上走一层。
+
+**关联**:[kb/02-frameworks/langgraph.md](../kb/02-frameworks/langgraph.md) · [kb/02-frameworks/other-frameworks.md](../kb/02-frameworks/other-frameworks.md) · [kb/00-fundamentals/tool-use.md](../kb/00-fundamentals/tool-use.md) · [kb/01-context-engineering/structured-outputs.md](../kb/01-context-engineering/structured-outputs.md)
+
+## Q7:LangGraph 怎么建图?状态如何流转?checkpointer 与 human-in-the-loop 怎么落地?
+
+**考察点**:能否讲清 reducer 存在的**必要性**而不是背 API;是否理解 super-step 才是并行与 reducer 的前提;HITL 的恢复语义有没有真踩过坑。
+
+**30 秒版**:三件事。① **建图**:`StateGraph(State)` 声明共享状态 schema,`add_node` 加节点(函数:读 state → 返回**部分更新**),`add_edge` / `add_conditional_edges` 加静态边与运行时路由,`START` / `END` 是入口出口,`compile()` 做结构校验并注入 checkpointer。② **状态流转**:节点**不直接改 state**,只返回增量,由 **reducer** 决定怎么合并——因为 LangGraph 按 Pregel 的 **super-step** 执行,同一超步内多个并行节点可能同时更新同一个 key,直接赋值会互相覆盖。③ **持久化与人审**:`compile(checkpointer=...)` + `config={"configurable": {"thread_id": ...}}` 让每个 thread 的状态在超步边界落盘;节点里调 `interrupt()` 中断并存盘、进程可以退出,人批准后用 `Command(resume=...)` 带值恢复。
+
+**深入版**:
+
+**一、为什么必须有 reducer(这题的真考点)**
+
+默认行为是**整值替换**。三个理由说明它不够:
+
+1. **并行合并**:同一超步内多个节点各自返回 `{"docs": [...]}`,若是赋值,后写覆盖先写,结果取决于调度顺序——不确定。reducer(如 `operator.add`)把它变成确定的合并。
+2. **累积语义**:`messages` 天然是追加而非替换。`add_messages` 更进一步:按 **message id** 判定是追加还是更新同一条,让"改写某条历史消息"成为幂等操作。
+3. **控制反转**:合并策略写在 **schema** 上(`Annotated[list, reducer]`),而不是散落在每个节点里。于是节点只需关心"我产出了什么",不需要知道别人产出了什么——这是图能扩展到几十个节点的结构性原因。
+
+一句话:**reducer 把"并发写冲突"从运行期问题变成了声明期契约**。
+
+**二、super-step 执行模型**
+
+借自 Google Pregel 的 BSP 模型:所有节点初始 inactive;收到入边消息则转 active;active 节点执行并返回更新;超步结束时没有新消息的节点投票 halt;当所有节点 inactive 且无在途消息,执行终止。两个推论直接决定你的设计:
+- **同一超步内的节点并行,超步之间是串行屏障**——状态合并只发生在超步边界,这正是 reducer 的作用点;
+- **checkpoint 落在超步边界**,不是任意一行代码——这决定了恢复粒度(见下)。
+
+**三、checkpointer 与 thread**
+
+`compile(checkpointer=...)` 之后,每个超步结束把状态快照写入存储,按 `thread_id` 组织成一条历史。thread ≈ 一个会话/一个任务实例;快照序列 ≈ 可回放的执行轨迹。实现有 `InMemorySaver`(开发)、`SqliteSaver`(本地)、`PostgresSaver` / `AsyncPostgresSaver`(生产,首次需 `setup()` 建表,`thread_id` 须 < 255 字符)。由此白拿三件事:崩溃续跑、HITL、time travel(回到某个历史快照改状态、重跑分支)。**状态读取/回放接口与 durability 级别的具体 API 以官方文档为准,as-of 2026-08-19**。
+
+**四、interrupt 的机制与那个必踩的坑**
+
+`interrupt()` 在节点内部触发中断:状态落盘,`invoke()` 的返回里带 `__interrupt__` 字段,进程可以直接退出等人。人批准后用 `Command(resume=值)` 对**同一个 `thread_id`** 再次 invoke,`interrupt()` 就地返回这个值继续。前置条件只有两个:**必须有 checkpointer、必须有 thread_id**。
+
+**坑(区分新手与生产经验的一条)**:恢复时**整个节点从头重新执行**,而不是从 `interrupt()` 那一行继续——`interrupt()` 之前的代码会再跑一遍。所以**节点内 interrupt 之前不能有副作用**:发邮件、扣款、写库都会做两次。工程做法是把 interrupt 单独放在一个"只读 + 提问"的节点里,副作用全部推到恢复之后的下游节点。这条正是 Q4 幂等性论断在 API 层的具体投影:**durable 的代价是重放,重放必须无害**。
+
+另有 `compile(interrupt_before=[...], interrupt_after=[...])` 这类静态断点(也可在 invoke 时传),适合调试与固定审批位;`interrupt()` 适合运行时按条件决定要不要问人。
+
+**实例**(最小可读骨架 + 一次 HIL 中断/恢复;导入路径与参数名以官方文档为准,as-of 2026-08-19):
+
+```python
+from typing import Annotated
+from typing_extensions import TypedDict
+from operator import add
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from langgraph.types import interrupt, Command
+from langgraph.checkpoint.memory import InMemorySaver      # 生产换 PostgresSaver
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]    # 追加 + 按 message id 幂等更新
+    findings: Annotated[list[str], add]        # 并行节点各写各的,合并而非覆盖
+    amount:   int                              # 无 reducer = 整值替换(只有单一写者时才安全)
+    approved: bool
+
+def check(state: State): return {"findings": ["库存不足"], "amount": 8000}
+
+def gate(state: State):                        # 只读 + 提问,interrupt 之前零副作用
+    ok = interrupt({"question": "批准采购?", "amount": state["amount"]})
+    return {"approved": ok, "messages": [("human", f"approved={ok}")]}
+
+def order(state: State): return {"messages": [("ai", create_po(state))]}   # 副作用在恢复之后
+
+g = StateGraph(State)
+for name, fn in [("check", check), ("gate", gate), ("order", order)]:
+    g.add_node(name, fn)
+g.add_edge(START, "check")
+g.add_conditional_edges("check", lambda s: "gate" if s["amount"] > 5000 else END)
+g.add_edge("gate", "order"); g.add_edge("order", END)
+app = g.compile(checkpointer=InMemorySaver())
+
+cfg = {"configurable": {"thread_id": "po-42"}}
+out = app.invoke({"messages": [], "findings": [], "amount": 0, "approved": False}, config=cfg)
+# out["__interrupt__"] 里是 gate 提的问题 —— 此刻进程可以退出,状态已落盘
+# ……几小时后人在审批系统点了同意,另一个进程里:
+app.invoke(Command(resume=True), config=cfg)   # gate 整个节点重跑,interrupt() 就地返回 True
+```
+读这段要抓三处:`Annotated[..., reducer]`(合并契约)、`add_conditional_edges`(运行时路由,但**分支集合是开发期枚举的**)、`thread_id`(恢复的唯一身份,跨进程跨机器都靠它)。
+
+**边界与误区**:
+- 误区:"在节点里 `state['x'] = 1` 改状态"。节点是**函数式的**:读 state,返回部分更新的 dict,合并交给 reducer。就地改写在并行与重放场景下会静默出错。
+- 误区:"conditional edge = agent 自主"。分支集合仍是开发期枚举的,与 handoff 的开放集合本质不同(见 Q1 追问)。图带来的是**可预测**,不是自主。
+- 误区:"有了 checkpointer 就 exactly-once"。恢复语义是 at-least-once,节点会重放;正确性靠业务幂等键兜底(见 Q4)。
+- 状态膨胀:`messages` 全量进 state,高频落盘会写爆存储。做法是 state 只放指针与决策摘要,大产物外置(见 [01 组 Q5](01-agent-fundamentals.md) 的"存"层)。
+- 抽象成本:十个节点以下的线性流程,图的收益抵不过"读懂图"的成本——那时一个 while 循环更诚实(见 Q2)。
+
+**追问预判**:
+- 追问:"两个并行节点都要写同一个 key,又不能简单相加,怎么办?" → 答:三条路——(a) 写自定义 reducer 把冲突解析显式化(带优先级、去重、取最大值);(b) 拆 key,每个节点写自己的命名空间,汇聚节点再归并;(c) 干脆串行化。判据是**冲突解析规则是否稳定可声明**:稳定就写 reducer,不稳定就拆 key、交给汇聚节点用业务逻辑裁决——**别把易变的业务判断塞进 reducer**,那是 schema 层,改动成本最高。
+- 追问:"HITL 等审批时进程真的能退出吗?怎么恢复?" → 答:能,这正是 checkpointer 的意义——状态在超步边界已落盘,恢复只需要**同一个 `thread_id` + 同一份 checkpointer 存储**,不要求同一个进程甚至同一台机器。生产形态是:中断时把 thread_id 与待审内容投递进审批系统,审批回调触发任意一个 worker 用 `Command(resume=...)` 继续。要额外设计的是超时策略(审批永远不回来怎么办)与恢复时的重放安全。
+
+**关联**:[kb/02-frameworks/langgraph.md](../kb/02-frameworks/langgraph.md) · [kb/05-memory/state-persistence.md](../kb/05-memory/state-persistence.md) · [kb/07-safety-security/permissions-hitl.md](../kb/07-safety-security/permissions-hitl.md) · [kb/08-production/reliability.md](../kb/08-production/reliability.md) · [kb/04-multi-agent/orchestration-patterns.md](../kb/04-multi-agent/orchestration-patterns.md)
