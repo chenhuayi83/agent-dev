@@ -24,7 +24,9 @@ deep_dives: [2026-08-19-landscape-baseline]
 | Google Gemini 3 | Gemini 3 + Enterprise Agent Platform | 平台 04-22 | 企业 agent 平台绑定 Vertex;ADK 为官方框架 |
 | 开源/其他 | Kimi K3、Grok 4.5 | 2026 | SWE-bench Verified 分别 93.4% / 86.6%,紧咬第一梯队 |
 
-**SWE-bench Verified(as-of 2026-08-17,饱和中)**:Opus 5 96.0%(vals.ai 复测 97.0%)、GPT-5.6 Sol 96.2%、Mythos 5 95.5%、Fable 5 95.0%、Kimi K3 93.4%、GPT-5.6 Luna 93.0%、Opus 4.8 88.6%、Grok 4.5 86.6%。头部 5 家挤在 ~4 分内 → **区分度已失,看 SWE-bench Pro / Terminal-Bench**([BenchLM](https://benchlm.ai/benchmarks/swe-bench-verified))。
+> ⚠️ **以下 Verified 分数不可用于能力排序**(2026-08-19 当日修正):OpenAI 已官方宣布停报 SWE-bench Verified——59.4% 的失败样本含缺陷测试用例,且主要前沿模型存在训练污染证据;Verified 上 ~80% 的模型在抗污染的 SWE-bench Pro 上仅约 23%。详见 [kb/06-evals/benchmarks.md](../06-evals/benchmarks.md)。下表仅作历史留存。
+
+**SWE-bench Verified(as-of 2026-08-17,已失效,仅历史参照)**:Opus 5 96.0%(vals.ai 复测 97.0%)、GPT-5.6 Sol 96.2%、Mythos 5 95.5%、Fable 5 95.0%、Kimi K3 93.4%、GPT-5.6 Luna 93.0%、Opus 4.8 88.6%、Grok 4.5 86.6%。头部 5 家挤在 ~4 分内 → **区分度已失,看 SWE-bench Pro / Terminal-Bench**([BenchLM](https://benchlm.ai/benchmarks/swe-bench-verified))。
 
 **判断**:同代旗舰在 agentic 能力上趋同;选型变量转向价格档位(GPT-5.6 三档 vs Claude 按型号)、生态绑定(工具/平台)、harness 适配。
 
@@ -34,5 +36,5 @@ deep_dives: [2026-08-19-landscape-baseline]
 
 ## 开放问题
 
-- SWE-bench Pro / Terminal-Bench 上的真实排序与差距?(队列 P7 评估工程覆盖)
+- SWE-bench Pro / Terminal-Bench 上的真实排序与差距?(Verified 已失效,这是当前最重要的空白)
 - 各家旗舰的工具调用错误率/并行调用上限等工程指标缺公开数据

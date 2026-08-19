@@ -10,7 +10,8 @@
 | P | 类型 | 主题 | 为什么 | 预计实验 | 入队日期 |
 |---|---|---|---|---|---|
 | 1 | 技能 | Codex 上手与 Claude Code 对照:CLI/IDE/cloud 形态、AGENTS.md、profiles/sandbox、skills 与 plugins | 用户双工具目标;Claude Code 侧已有首篇,Codex 侧需一手调研讲透 | 视环境:装 CLI 跑最小任务 | 2026-08-19 |
-| 2 | 前沿 | Claude Agent SDK 深研:架构 / agent loop / 与 Claude Code 的关系 | 本系统运行其上,吃狗粮;兼具技能价值 | 是:最小 agent + 自定义 tool | 2026-08-19 |
+| 2 | 前沿 | **agent 基准的重建**:SWE-bench Pro 构成与榜单、Terminal-Bench 2.0、HAL;取 OpenAI 停报 Verified 官方原文(当前 403)核实 59.4%/23% 等数字与"回撤"传闻 | Verified 已被官方判定失效,当前无可信能力排序基准——这是最紧的知识空白 | 否 | 2026-08-19 |
+| 2.5 | 前沿 | Claude Agent SDK 深研:架构 / agent loop / 与 Claude Code 的关系 | 本系统运行其上,吃狗粮;兼具技能价值 | 是:最小 agent + 自定义 tool | 2026-08-19 |
 | 3 | 技能 | CLAUDE.md / AGENTS.md 工程学 + auto memory:写好项目记忆 | 官方单列主题,一次配置长期受益 | 否 | 2026-08-19 |
 | 4 | 技能 | 上下文管理实战:/clear /compact /btw /rewind、subagent 隔离调查 | 上下文是第一性约束,官方五大反模式半数与此相关 | 否 | 2026-08-19 |
 | 5 | 前沿 | MCP 2026 现状:07-28 stateless 迁移 / 生态 / 最佳实践 | 新 spec 刚落地,迁移窗口一年 | 是:最小 MCP server | 2026-08-19 |
