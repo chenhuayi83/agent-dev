@@ -151,7 +151,16 @@ ReAct 的历史贡献:在只有文本补全的时代,用 few-shot 提示强行�
 3. **存(externalize)**:根本解。把状态写出上下文——计划写 PLAN.md、进度写 state 文件、结论写文档,上下文只保留"去哪读"的指针。这也是跨会话记忆的基础:文件式记忆(memory 目录/CLAUDE.md/auto memory)、或向量/图式记忆系统。判据:**凡是"明天还需要的",都不该只活在上下文里**。
 4. **续(resume)**:工程闭环。阶段性 checkpoint(git commit / state 快照)+ 启动自检(读外置状态、判断从哪续)→ 会话被杀/压缩失真都能恢复。长任务 agent 的可靠性来自"任意时刻可重建现场",而不是祈祷上下文不丢。
 
-实战案例(本仓库自身):每日自动运行的知识库 agent,把协议(PROTOCOL.md)、状态(state.json)、队列(queue.md)全部外置,每阶段 git checkpoint;新会话零上下文启动,靠读文件重建现场——上下文只是工作台,git 仓库才是记忆。
+**实例**(本仓库自身,四层各落到什么文件):
+
+| 层 | 本系统的实现 |
+|---|---|
+| 省 | 大批量写作交给 subagent 在独立上下文完成,主会话只收一行确认;简报只精读 ≤4 篇原文 |
+| 压 | 长会话触发 compaction 时,协议要求保留:已改文件清单、当前阶段、待办 |
+| 存 | 协议 `meta/PROTOCOL.md`、状态 `meta/state.json`(last_run/pending/counters)、队列 `meta/queue.md`、去重索引 `meta/seen.jsonl` 全部外置为文件 |
+| 续 | 每阶段 `git commit` 作 checkpoint + `pending` 字段记录断点;新会话零上下文启动,靠读文件重建现场 |
+
+一句话:**上下文只是工作台,git 仓库才是记忆**。
 
 **边界与误区**:
 - 误区:"上下文越大越好,塞满信息模型更聪明"——无关信息是噪声,会主动降低质量(kitchen sink 反模式);

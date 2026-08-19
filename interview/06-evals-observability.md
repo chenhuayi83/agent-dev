@@ -26,7 +26,6 @@ questions: 5
 | 正确性判据 | 输出匹配参考答案 | 世界的**最终状态**是否符合预期 |
 | 环境 | 无 | 必须可建可毁、确定性、可回滚 |
 | 失败定位 | 就在这一次输出里 | 需要找出 20 步里的**首个偏离点** |
-| 成本 | 一次调用 | 数十次调用 × k 次重复 |
 | 方差来源 | 采样温度 | 采样 + 工具时序 + 环境状态 + 外部依赖 |
 
 **结果级评估**的设计核心是一句话:**让环境判定成功,而不是让模型判定成功**。三种验证器形态,优先级从高到低:
@@ -40,36 +39,29 @@ questions: 5
 - **结果对但轨迹烂**:agent 直接改测试让它通过、绕过权限检查、或用 30 步和 10 倍成本蒙对——只测结果就是在**奖励作弊**(reward hacking),这是 agent 评估最贵的坑;
 - **结果错但轨迹好**:外部依赖抖动、fixture 脏了——只看结果会把环境问题记到模型头上。
 
-所以分工是:**结果级做 pass/fail 门禁,轨迹级做诊断切片 + 少量安全类硬断言**。不要拿轨迹相似度当主判据(理由见"边界")。
-
-最后是方差纪律。agent 评估必须重复运行并区分两个指标:**pass@k**(k 次里至少一次成功——乐观,反映能力上限,适合有人复核或有验证器可挑选的场景)与 **pass^k**(k 次全部成功——悲观,反映可靠性,生产 SLA 该看这个)。只报单次成功率的评估报告,基本可以认为没做过评估。
+所以分工是:**结果级做 pass/fail 门禁,轨迹级做诊断切片 + 少量安全类硬断言**;不要拿轨迹相似度当主判据(理由见"边界")。最后是方差纪律:agent 评估必须重复运行并区分 **pass@k**(k 次至少一次成功——乐观,反映能力上限,适合有人复核或有验证器可挑选的场景)与 **pass^k**(k 次全部成功——悲观,反映可靠性,生产 SLA 该看这个)。只报单次成功率的评估报告,基本可以认为没做过评估。
 
 **实例**(一个"退款处理 agent"的两级用例骨架):
 
 ```python
-# 结果级:环境说了算
-def verify_outcome(env):
-    order = env.db.get_order("A-1001")
-    assert order.status == "refunded"
-    assert order.refund_amount == Decimal("128.00")
-    assert len(env.mail.sent_to("user@x.com")) == 1     # 不多发也不漏发
-    assert env.db.get_order("A-1002").status == "paid"  # 没误伤旁边的订单(P2P 思路)
+def verify_outcome(env):                                  # 结果级:环境说了算
+    assert env.db.get_order("A-1001").status == "refunded"
+    assert env.db.get_order("A-1001").refund_amount == Decimal("128.00")
+    assert len(env.mail.sent_to("user@x.com")) == 1       # 不多发也不漏发
+    assert env.db.get_order("A-1002").status == "paid"    # 没误伤旁边的订单(P2P 思路)
 
-# 轨迹级:不变式 + 预算,不做精确匹配
-def verify_trajectory(traj):
+def verify_trajectory(traj):                              # 轨迹级:不变式 + 预算,不做精确匹配
     names = [s.tool for s in traj.tool_calls]
     assert names.index("verify_identity") < names.index("issue_refund")  # 顺序不变式
     assert "delete_order" not in names                                   # 安全硬断言
-    assert len(traj.steps) <= 8                                          # 效率预算
-    assert traj.cost_usd <= 0.05                                         # 成本预算
+    assert len(traj.steps) <= 8 and traj.cost_usd <= 0.05                # 效率与成本预算
 ```
 
 **边界与误区**:
 - 误区:用最终回复文本的相似度(BLEU/embedding)评 agent。agent 的价值在**副作用**,不在措辞;文本相似度高而订单没退成,是纯粹的假阳性。
 - 误区:轨迹级评估拿"与 golden trajectory 逐步一致"当满分——这会惩罚更短更优的新解法,把评估变成对旧实现的固化。轨迹级应该写**约束与不变式**,不写标准答案。
-- 误区:把工具调用次数当质量指标(越少越好)。少调用也可能是过早终止;步数要和成功率联合看。
-- 边界:开放式任务(调研、写作、方案设计)没有可编程验证器,只能 rubric + judge + 人工抽检,此时必须老实报置信区间,别把 judge 分数说成成功率。
-- 边界:并发/时序类 bug 在评估里天然难复现;确定性 fixture(冻结时间、固定随机种子、mock 外部 API)是前提,否则测的是噪声。
+- 误区:把工具调用次数当质量指标(越少越好)。少调用也可能是过早终止;步数必须和成功率联合看。
+- 边界:开放式任务(调研、写作、方案设计)没有可编程验证器,只能 rubric + judge + 人工抽检,此时必须老实报置信区间,别把 judge 分数说成成功率;并发/时序类 bug 也天然难复现,确定性 fixture(冻结时间、固定随机种子、mock 外部 API)是前提,否则测的是噪声。
 
 **追问预判**:
 - 追问:"20 步的轨迹失败了,你怎么定位根因?" → 答:切成 span 后找 **first divergence**(第一个偏离预期的**决策**)而不是最终报错点;用 counterfactual replay(从第 k 步注入正确观测再往下跑)区分"决策错"还是"工具/环境错";按失败分类法打标签(工具选错/参数错/观测误读/规划错/过早终止/死循环/上下文丢失),统计分布决定该改提示词、改工具描述还是改 harness。
