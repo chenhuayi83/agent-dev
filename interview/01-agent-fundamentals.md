@@ -2,7 +2,7 @@
 last_updated: 2026-08-19
 type: interview
 topic: Agent 基础
-questions: 5
+questions: 6
 ---
 
 # 面试题:01 Agent 基础
@@ -172,3 +172,100 @@ ReAct 的历史贡献:在只有文本补全的时代,用 few-shot 提示强行�
 - 追问:"多 agent 是不是上下文问题的银弹?" → 答:subagent 隔离确实是"省"层利器,但引入协调成本与新失败模式(引 Anthropic 2026-08 多智能体研究:群体决策可能劣于个体),范围要克制。
 
 **关联**:[kb/01-context-engineering/overview.md](../kb/01-context-engineering/overview.md) · [kb/05-memory/state-persistence.md](../kb/05-memory/state-persistence.md) · [skills/claude-code/01](../skills/claude-code/01-core-workflow.md)(原理一同源)
+
+## Q6:除了 ReAct,还有哪些 agent 设计范式?Plan-and-Execute、Reflection/Reflexion、Tree-of-Thoughts 各解决什么问题、什么时候用?
+
+**考察点**:能否把范式当作**带成本函数的搜索算法**来横向比较,而不是背四个名词;能否判断哪些今天还需要显式实现。
+
+**30 秒版**:这几个范式其实是同一件事的不同形状:**用更多推理量/更多轮次换正确率**。ReAct 是线性搜索(边做边看),Plan-and-Execute 把"规划"从执行里拆出来单独做一次,Reflection/Reflexion 加一条"评判→重来"的回边,Tree-of-Thoughts 把线性轨迹展开成带回溯的树。因为它们都是搜索,收益就取决于同一件事:**你有没有一个比生成更便宜的验证/排序手段**。有廉价 verifier(测试、编译器、schema)时搜索很划算;没有 verifier 时,多采样只会得到更多**自信的错误答案**。所以选择的两个轴是**错误代价**与**可验证性**。
+
+**深入版**:
+
+**1. 统一视角:四个范式 = 四种搜索形状**
+
+| 范式 | 控制流形状 | 多消耗什么 | 换来什么 | 成立的前提 |
+|---|---|---|---|---|
+| ReAct | 线性:think→act→observe 循环 | 每步一次调用 | 用真实观察纠正推理 | 环境能给出反馈 |
+| Plan-and-Execute | 两段:planner 一次出全局计划 → executor 逐步执行 → replanner 修计划 | 一次昂贵的规划调用 | 全局一致性;executor 不必携带全部历史 | 步骤在**看到观察之前**就大致可枚举 |
+| Reflection(self-refine) | 轮内回边:generate → critique → revise | 每次修订 ≥2× 调用 | 修掉"一遍过"的低级错误 | **critic 比 generator 有信息优势** |
+| Reflexion | 跨试次回边:失败 → 把教训写成自然语言存入 memory → **整个任务重来** | N 次完整试次 | 跨试次不重蹈覆辙 | 存在**试次级别的成功/失败信号**,且任务可重来 |
+| Tree-of-Thoughts | 树:每步生成 k 个候选 → 打分 → BFS/DFS + **回溯** | 分支 × 深度,常几十倍 token | 能走回头路 | 存在**对中间状态**打分的 evaluator |
+
+看最后一列——这是本题的题眼。四行的前提各不相同,但都属于同一类东西:**一个外部的、比生成更便宜的判别信号**。
+
+**2. 核心判据:generator-verifier gap**
+
+搜索的收益 = 候选质量的方差 × **你挑对的能力**。生成更多候选很容易,**挑**才是瓶颈。所以决定"上不上范式"的是两个量:**错误代价**(一次错的后果多大:可回滚的 lint 错 vs 打款给错账户)和**可验证性**(验证一个候选比生成它便宜多少)。推出一个比背名词有用得多的 2×2:
+
+| | 有廉价 verifier | 无廉价 verifier |
+|---|---|---|
+| **错误代价高** | **上搜索/反思循环**:verifier 会剪枝,多花的轮次值 | **别靠多采样**,上 human-in-the-loop / 计划审批 |
+| **错误代价低** | 直接重试,别造范式 | 单次通过即可 |
+
+右上角那格最能区分人:很多人下意识认为"重要任务就多让模型想几轮"。但**没有验证信号时,自我评判与自我生成共享同一套先验和同一份上下文,错误是相关的**——它评不出自己错在哪。这正是"你确定吗?"往往只换来一次谄媚式改口的机制原因。
+
+**3. 逐个范式:机制、边界、2026 存活状态**(以下存活判断是**我的判断**,理由随附,非实测结论)
+
+**(a) Plan-and-Execute**。机制:planner 一次性产出步骤列表 → executor 逐步执行(常用更便宜的模型,且只带当前步骤而非全部历史)→ 失败时 replanner 改计划。与 ReAct 的真实差别不是"想得更全",而是**规划所依据的信息更少**:计划在看到任何 observation 之前就定了。所以纯 plan-and-execute 对意外很脆,现实实现都必须带 replan 回边,于是退化成"粗粒度的 ReAct"。
+存活状态:活得最好,但**理由换了**——今天它值钱不是因为提升推理质量,而是三个与模型聪明程度无关的工程属性:**审批闸门**(不可逆动作前给人看的必须是计划,不是执行到一半的结果)、**抗压缩的状态锚点**(写下来的计划/待办能在 compaction 后活下来,散在历史里的意图活不下来,见 [02 Q2](02-context-engineering.md))、**成本路由**(强模型规划、弱模型执行)。对应产物:plan mode、各家 agent 的 TODO/task list。
+
+**(b) Reflection(自我批判)**。机制:同一轮内 generate → critique → revise。收益完全取决于 critic 相对 generator 有没有**信息优势**;同上下文、同模型、同提示的自我批判 ≈ 再采样一次,还额外引入"为批判而批判"的回归风险。
+存活状态:**纯形式的自我反思价值最低**,但三种"制造了信息差"的变体今天广泛在用:critic 拿到**工具反馈**(测试输出、类型检查、schema 校验错误——这时它不是在反思,是在读事实);critic 在**干净上下文**里只看产物与验收标准(见 [02 Q6](02-context-engineering.md) 的对抗性复核);critic 换一套 **rubric**(安全/性能/需求覆盖)。所以正确说法不是"reflection 过时了",而是:**反思的价值来自信息差,不来自反思这个动作本身**。
+
+**(c) Reflexion**(Shinn et al., 2023)。与 Reflection 的区别常被答错:Reflexion 是**跨试次**的——一次完整尝试失败后,拿到成功/失败信号,让模型把失败原因写成一段自然语言教训存进 episodic memory,然后**整个任务从头重来**并带上这段教训;作者把它描述为"用语言做梯度下降",反思文本就是那个梯度。前提很硬:任务可重来(幂等/沙箱)+ 有试次级信号。生产里很多任务两条都不满足——发出去的邮件不能重来。
+存活状态:**机制活得很好,名字消失了**。它今天以两种形态存在:harness 的重试策略,以及记忆工程里的"负面知识"——[02 Q2](02-context-engineering.md) 压缩保留清单中那条"已排除的方案 + 原因",就是 Reflexion 的教训存储退化到单会话内的形态。能主动指出这个连接是加分项。
+
+**(d) Tree-of-Thoughts**(Yao et al., 2023)。机制:把"一条推理链"换成"一棵状态树",每步用模型生成 k 个候选 thought,再用模型或程序给中间状态打分,按 BFS/DFS 展开并**回溯**。它真正的新东西是两件:显式的**状态评估器**,和**可以走回头路**。成本是分支 × 深度的乘法增长,外加每个节点一次评估调用——所有范式里最贵。
+存活状态:**显式实现的必要性下降最多**。原因是"搜索发生在哪一层"变了:原生 reasoning 模型在 thinking 段内部就会提假设、自我否定、换路线,等于把小规模搜索与回溯搬进了单次调用,还不必付 k 倍的 prompt 重放成本。今天仍值得显式做树搜索的只剩一种情况:**评估器是真程序而不是模型**——每个节点跑一次测试/编译/形式验证/模拟器(代码合成、定理证明、路径规划)。反过来,如果打分还是同一个模型来做,你多半只是把 [02 Q1](02-context-engineering.md) 的注意力问题乘上了分支数。
+
+**4. 与 Q4 的分工:把同一把尺子用到其他范式上**
+
+Q4 讲 ReAct 被内化的三层(推理/行动/循环)。同样的尺子量其他范式,得到的不是整齐的"全被内化",而是**按层次分化**:
+
+| 范式 | 已被内化的部分 | 仍需显式实现的部分 | 今天的落点 |
+|---|---|---|---|
+| Tree-of-Thoughts | 搜索与回溯(进了 thinking) | 接**程序化 evaluator** 的那种树搜索 | 少数强可验证域 |
+| Reflection | "再检查一遍"的本能 | 制造**信息差**的复核 | reviewer subagent、测试闭环 |
+| Reflexion | 单轮内的自我纠错 | 跨试次的**教训持久化** | memory / compaction 保留项 |
+| Plan-and-Execute | "先想清楚再动手"的倾向 | 计划作为**可审批、可持久、可路由**的产物 | plan mode / TODO 列表 |
+
+一句话收口:**被内化的是"认知动作",没被内化的是"工程属性"——凡是范式中要求外部信号、人的介入、跨会话持久化的那部分,模型再强也接管不了。**
+
+**实例**(四种控制流的骨架对照,差异全在循环结构):
+
+```python
+# ReAct:线性,单一循环
+while not done: obs = act(model.next_step(history)); history += obs
+
+# Plan-and-Execute:规划与执行分离,失败才回到 planner
+plan = planner(task)                        # 一次昂贵调用,此时还没有任何 observation
+for step in plan:
+    if not (r := executor(step)).ok:        # executor 可用更便宜的模型
+        plan = replanner(task, plan, r); break   # ← 没有这条回边就是纯开环,必碎
+
+# Reflection vs Reflexion:回边的位置不同(轮内 / 跨试次)
+draft = gen(task);  draft = revise(draft, critique(draft))          # Reflection:同一轮内
+for _ in range(N):                                                   # Reflexion:整任务重来
+    if (t := run(task, memory)).success: break
+    memory.append(reflect(t.trajectory, t.reward))   # ← 教训进 memory,这是关键
+
+# Tree-of-Thoughts:分支 + 打分 + 回溯
+frontier = [root]
+while frontier:
+    node = pick(frontier)
+    kids = [s for s in model.propose(node, k=5) if evaluate(s) > τ]  # evaluate 是谁?决定成败
+    frontier = backtrack_or_extend(frontier, node, kids)
+```
+
+**边界与误区**:
+- 误区:"范式越多越好、可以叠 buff"。每加一层都乘上延迟、成本与新的失败面;先回答"我的 verifier 在哪",再决定加不加。
+- 误区:把 Reflection 与 Reflexion 当同义词。轮内修订 vs 跨试次教训 + memory,是两个东西,面试常考。
+- 误区:"plan-and-execute 比 ReAct 聪明"。它的计划是**信息更少**时做出的,它赢在工程属性而非推理质量。
+- 边界:弱模型/本地小模型上,上面所有"已被内化"的判断都不成立——显式范式仍是主要提质手段(与 Q4 的兜底场景一致)。
+- 诚实边界:内化程度的判断依据是机制推理(能力位置从提示迁移到权重与解码预算)加产品形态观察,**不是我做过的对照实验**;落到你自己的模型与任务,应当用评估集实测"加这层多提升多少、多花多少 token"。
+
+**追问预判**:
+- 追问:"self-consistency(多采样投票)算范式吗?k 怎么选?" → 答:算,而且是最朴素的一种。但它只在**答案空间离散可比**时成立(数值答案、分类标签),开放式生成上"多数"无定义;k 看边际收益拐点,通常几次后迅速衰减。关键判据:**如果你有 verifier,用 verifier 挑永远优于投票**——投票是没有 verifier 时的退而求其次。
+- 追问:"你怎么判断一个任务该不该上显式 plan?" → 答:三个可操作信号——(1) 一句话说不清最终产物/diff;(2) 含不可逆动作,需要人在执行前看一眼;(3) 任务跨会话或会触发压缩,需要一个能落盘的锚点。三条都不满足时,plan 就是纯开销。
+
+**关联**:[kb/00-fundamentals/planning-reasoning.md](../kb/00-fundamentals/planning-reasoning.md) · [kb/10-landscape/research-frontiers.md](../kb/10-landscape/research-frontiers.md) · [02 Q2](02-context-engineering.md)(教训持久化)· [02 Q6](02-context-engineering.md)(干净上下文复核)

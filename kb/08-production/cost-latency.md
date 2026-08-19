@@ -25,6 +25,14 @@ prompt caching、模型分级(路由)、batch API、并行化、token 预算护�
 - 两家写入倍率均为 1.25×,可互为独立佐证(而非单一来源)
 - 模型定价参照:Claude Opus 5 $5/百万输入、$25/百万输出(2026-07-24 发布价)
 
+## 底层支撑(推理引擎层)
+
+本文讲的是**应用层**成本优化(缓存、路由、并行、预算护栏)。其下一层——KV Cache 显存与 MQA/GQA/MLA、Flash Attention、prefill/decode 两阶段与 TTFT/TPOT、continuous batching 与 PagedAttention、量化——决定了应用层能拿到的成本与延迟下界,系统整理在 [interview/12-llm-engineering.md](../../interview/12-llm-engineering.md)。
+
+两条最该记住的联系:
+- **prompt caching 的服务端真身就是 prefix KV 复用**——这解释了为什么前缀必须逐字节不变、为什么有最小长度门槛;
+- **并发 agent 的瓶颈通常是 KV 显存而非算力**——长上下文 agent 尤其如此,加 batch 救不回吐字速度。
+
 ## 时间线
 
 ## 开放问题
