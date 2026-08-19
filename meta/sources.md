@@ -8,11 +8,11 @@
 
 | 名称 | 方法 | 质量分 | 最近有效 | 备注 |
 |---|---|---|---|---|
-| Anthropic News | WebFetch https://www.anthropic.com/news | 3 | — | 官方发布 |
-| Claude Code CHANGELOG | WebFetch https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md | 3 | — | raw 文件,取窗口内版本 |
-| OpenAI News | WebFetch https://openai.com/news/ | 3 | — | 官方发布 |
-| HN Algolia(agent) | WebFetch https://hn.algolia.com/api/v1/search_by_date?query=agent&tags=story&numericFilters=points%3E20 | 3 | — | 结构化 JSON 自带时间戳,最省预算 |
-| LangChain Blog | WebFetch https://blog.langchain.com/ | 3 | — | LangGraph 生态与 agent 工程文章 |
+| Anthropic News | WebFetch https://www.anthropic.com/news | 3 | 2026-08-19(窗口空) | 官方发布 |
+| Claude Code CHANGELOG | WebFetch https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md | 4 | 2026-08-19 | raw 文件,取窗口内版本 |
+| OpenAI News | WebFetch https://openai.com/news/ | 3 | — | 2026-08-19 HTTP 403(失败 1/3);WebSearch 兜底可用 |
+| HN Algolia(agent) | WebFetch https://hn.algolia.com/api/v1/search_by_date?query=agent&tags=story&numericFilters=points%3E20 | 4 | 2026-08-19 | 结构化 JSON 自带时间戳,最省预算,今日产出最高 |
+| LangChain Blog | WebFetch https://www.langchain.com/blog/ | 4 | 2026-08-19 | 旧域名 blog.langchain.com 已 301,勿再用 |
 
 ## B 层(轮换,每日 2-3 个)
 
