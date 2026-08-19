@@ -1,6 +1,6 @@
 # agent-dev:自进化的 Agent 开发学习知识库
 
-整理学习 agent 开发、保持业界前沿水平的自动化知识库。每天由 Claude Code 自动跑一轮:扫描业界动态 → 专题深研 → 知识沉淀 → 自我进化 → 提交合并,全程无人值守。
+整理学习 agent 开发、保持业界前沿水平的自动化知识库,并修炼 **Claude Code / Codex 等 AI 编码工具的 vibe coding 实战技能**(含面试题,每个知识点讲透)。每天由 Claude Code 自动跑一轮:扫描业界动态 → 深内容产出(前沿/技能/面试题轮动)→ 知识沉淀 → 自我进化 → 提交合并,全程无人值守。
 
 ## 使用方式
 
@@ -16,6 +16,8 @@
 |---|---|
 | `briefings/` | 每日简报(时效资讯,append-only) |
 | `deep-dives/` | 专题深研报告(append-only) |
+| `skills/` | **vibe coding 技能手册**(Claude Code / Codex 实战),入口 [skills/_index.md](skills/_index.md) |
+| `interview/` | **面试题库**(每题讲透),入口 [interview/_index.md](interview/_index.md) |
 | `kb/` | 知识库:按主题的活文档,入口 [kb/_index.md](kb/_index.md) |
 | `experiments/` | 可运行代码实验 |
 | `meta/` | 系统自身:[宪法](meta/CONSTITUTION.md) / [协议](meta/PROTOCOL.md) / [队列](meta/queue.md) / [信源](meta/sources.md) / [进化日志](meta/EVOLUTION.md) |
