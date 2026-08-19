@@ -1,0 +1,15 @@
+# Claude Code 会话产物(嵌套 worktree 绝不能被主仓库跟踪)
+.claude/worktrees/
+.claude/settings.local.json
+
+# 系统与编辑器
+.DS_Store
+
+# 实验运行产物
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+.env
+*.local-backup-*
