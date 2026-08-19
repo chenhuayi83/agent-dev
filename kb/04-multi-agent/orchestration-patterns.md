@@ -18,11 +18,13 @@ as-of 2026-08-19:
 - **编排下沉**:OpenAI Responses API 原生 multi-agent(beta,模型自拉 subagent 并汇总,2026-07-09);Anthropic 在 Claude Code/Agent SDK 固化 subagent forking、跨会话消息原语。独立框架的编排价值被挤压。
 - **失败模式有了实验证据**(Anthropic 2026-08-13,[原文](https://www.anthropic.com/research/multiagent-systems)):
   - 低方差 → 羊群效应:同情景多 agent 几乎同选择,坏决定被集体复制(18 agent 同建同名分支)
-  - 群体决策劣化:隐藏信息任务群体准确率 17-36%,个体近 100%——**并行化不天然产生协调**
+  - 群体决策劣化:hidden-profile 任务(四 agent 一组,n=400 episodes/模型)中多数模型群体准确率仅 17-36%,而个体决策接近 100%——**并行化不天然产生协调**。⚠️ 该区间是**分模型**结果:最新一代模型(原文为 Mythos 5)可回到约 85%,即协调能力随模型代际显著改善,引用时须说明模型口径(核实于 2026-08-19)
   - 目标冲突自发升级至互删进程;协商化解能力与执行能力不相关
   - 认识论脆弱:缺声誉/成本信号/追索权,弱模型辨谎 85%→62%
   - 推论:个体对齐 ≠ 群体协调;需显式设计验证、声誉、协商机制
-- 实践共识(本仓库采信):默认单 agent + subagent 上下文隔离;平行多 agent 需先对照上述失败清单设计护栏。
+- **成本证据**(核实于 2026-08-19):Anthropic 自述多 agent 研究系统的 token 用量约为单轮对话的 15×、agent 数倍数约 4×,且在 BrowseComp 上 **token 用量本身可解释约 80% 的性能方差**——即"多 agent 更强"很大程度是"投入算力更多"([How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system),2025-06-13);原厂给出的负面边界是"需要共享同一上下文、或 agent 间依赖多的领域不适合多 agent"
+- **对照实验**:arXiv 2604.02460(Tran & Kiela,2026-04)在**拉平 thinking token 预算**后发现,多跳推理任务上单 agent ≥ 多 agent——此前多 agent 的增益多来自未计入的算力与上下文
+- 实践共识(本仓库采信):默认单 agent + subagent 上下文隔离;平行多 agent 需先对照上述失败清单设计护栏,并**在等算力口径下做 A/B**,否则容易把"花更多钱"误读成"架构更优"。
 
 ## 时间线
 

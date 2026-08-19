@@ -75,7 +75,7 @@ questions: 6
 
 **debate / panel**——n 个 agent 独立作答,互看后修订或由 judge 裁决。理论收益是把**生成与验证分离**(验证比生成容易)。但 2026-08 的实验给了它一记重击:同模型 agent 的方差太低,"独立性"是假设不是性质;在需要整合私有信息的判断任务上,群体准确率跌到 17-36%,而单 agent 掌握全部事实时接近 100%。所以 debate 要有效,必须**外生注入方差**:不同模型、不同角色提示、不同证据切片,并让裁决规则奖励"带证据的少数派"而不是多数票。
 
-选型不靠口诀靠判据:**先问控制权该给谁**。流程能预先编排→pipeline;需要中心问责与预算控制→supervisor;流程开放且专家域清晰→swarm;正确性远比成本重要且能造出真方差→debate。真实系统通常是混合:supervisor 主干 + 高风险节点插 debate + 叶子是 pipeline。
+选型不靠口诀靠判据:**先问控制权该给谁**。流程能预先编排→pipeline;需要中心问责与预算控制→supervisor;流程开放且专家域清晰→swarm;正确性远比成本重要且能造出真方差→debate。真实系统通常是混合:supervisor 主干 + 高风险节点插 debate + 叶子是 pipeline。补一个趋势判断:编排正在下沉进平台层(OpenAI Responses API 原生 multi-agent beta,2026-07-09;Claude Code 的 subagent forking 与跨会话消息原语,as-of 2026-08),独立编排框架的价值被挤压——但"控制权归谁"的判据不因此改变。
 
 **实例**(一个代码审查系统的四种形态):
 
@@ -398,4 +398,3 @@ handoff:
 - Anthropic, *Patterns and problems in emerging multi-agent systems*(2026-08-13):<https://www.anthropic.com/research/multiagent-systems> —— Q3 全部实验数据来源
 - Anthropic, *How we built our multi-agent research system*(2025-06-13):<https://www.anthropic.com/engineering/multi-agent-research-system> —— 4×/15× token 口径、80% 方差、适用边界
 - Tran & Kiela, *Single-Agent LLMs Outperform Multi-Agent Systems on Multi-Hop Reasoning Under Equal Thinking Token Budgets*(arXiv 2604.02460,2026-04):<https://arxiv.org/abs/2604.02460> —— 等预算对照
-- 编排下沉(as-of 2026-08):OpenAI Responses API 原生 multi-agent beta(2026-07-09);Claude Code 2.1.232 起 subagent forking 默认开启、支持跨会话 `@` 提及消息

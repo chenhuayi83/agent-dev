@@ -17,7 +17,7 @@
 | `briefings/` | 每日简报(时效资讯,append-only) |
 | `deep-dives/` | 专题深研报告(append-only) |
 | `skills/` | **vibe coding 技能手册**(Claude Code / Codex 实战),入口 [skills/_index.md](skills/_index.md) |
-| `interview/` | **面试题库**(每题讲透),入口 [interview/_index.md](interview/_index.md) |
+| `interview/` | **面试题库**:10 组 55 题,每题讲透 + 30 秒版/深入版/追问预判,入口 [interview/_index.md](interview/_index.md) |
 | `kb/` | 知识库:按主题的活文档,入口 [kb/_index.md](kb/_index.md) |
 | `experiments/` | 可运行代码实验 |
 | `meta/` | 系统自身:[宪法](meta/CONSTITUTION.md) / [协议](meta/PROTOCOL.md) / [队列](meta/queue.md) / [信源](meta/sources.md) / [进化日志](meta/EVOLUTION.md) |
@@ -26,4 +26,4 @@
 
 | 日期 | 简报 | 深研 | 备注 |
 |---|---|---|---|
-| 2026-08-19 | [简报](briefings/2026/2026-08-19.md) | [2026-08 全景基线扫描](deep-dives/2026/2026-08-19-landscape-baseline.md) | 首次运行:bootstrap + 完整一轮 |
+| 2026-08-19 | [简报](briefings/2026/2026-08-19.md) | [2026-08 全景基线扫描](deep-dives/2026/2026-08-19-landscape-baseline.md) | 首次运行:bootstrap + 完整一轮;另建成[技能首篇](skills/claude-code/01-core-workflow.md)与[面试题库 10 组 55 题](interview/_index.md) |
