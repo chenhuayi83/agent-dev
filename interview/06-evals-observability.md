@@ -171,21 +171,17 @@ SWE-bench Verified 对应下来:任务源 = 真实 GitHub PR/issue;环境 = 仓�
 **实例**(自建"内部 SWE-bench"的构造清单,复用 SWE-bench 的机制但天然抗污染):
 
 ```yaml
-# 选题规则:从自己仓库的历史 PR 里挑
-filters:
-  - 有关联 issue 描述(输入才完整)
-  - 该 PR 新增或修改了测试(F2P 才有来源)
+filters:                                  # 选题规则:从自己仓库的历史 PR 里挑
+  - 有关联 issue 描述(输入才完整);该 PR 新增或修改了测试(F2P 才有来源)
   - diff 跨 >= 2 个文件(排除单行改动)
-  - merged_at > 模型知识截止日期        # 天然抗污染的关键一条
-# 单条 case
+  - merged_at > 模型知识截止日期          # 天然抗污染的关键一条
 case:
   id: internal-swe-0042
   repo_snapshot: <该 PR 的父提交 sha>
   env_image: ci-base:2026-08              # 依赖锁定
   input: <issue 正文>
-  verifier:
-    fail_to_pass: [tests/test_billing.py::test_proration]
-    pass_to_pass: [<既有测试全集>]
+  verifier: {fail_to_pass: [tests/test_billing.py::test_proration],
+             pass_to_pass: [<既有测试全集>]}
   budget: {max_steps: 40, max_usd: 1.50}
   labels: {type: bugfix, difficulty: medium, source: prod_incident}
 ```
@@ -194,7 +190,7 @@ case:
 **边界与误区**:
 - 误区:跨来源比较分数而不看 scaffold。同模型换 harness 的分差可达数分(本仓库 landscape 基线里 Coding Agent Index 的同代对比已实证),跨表比较基本无效。
 - 误区:把 SWE-bench 分数当"编程能力"。它只测"给定 issue 与测试的补丁生成",不测需求澄清、架构设计、代码评审、可维护性,更不测成本与安全。
-- 误区:自建 eval 专挑最难的题。难题集只测上限;发版门禁需要覆盖**典型分布** + 已知回归,难题另建一个"能力探针集"。
+- 误区:自建 eval 专挑最难的题。难题集只测上限;发版门禁需要覆盖**典型分布** + 已知回归,难题另建"能力探针集"。
 - 边界:基准有保质期。任何写进文档或简历的分数都必须带 **as-of 日期 + 口径来源**,否则半年后就是错误信息。
 
 **追问预判**:
@@ -238,8 +234,7 @@ trace: user_turn            {session_id, user_id, agent_version, prompt_version}
 - **成本**:每任务 $、token 分解(input / output / thinking / cache_read)、cache 命中率、子代理成本占比。
 - **效率**:端到端延迟 **P50/P95/P99**、每任务步数分布、单步等待时间、并行工具调用占比。
 - **可靠性**:分工具的错误率、超时率、达到轮次上限的比例、循环检测触发率、护栏拦截率、上下文溢出/compaction 触发率。
-
-贯穿四层的一条纪律:**均值会撒谎**。agent 的步数与成本是重尾分布,少量长尾任务吃掉大部分预算;只看均值的成本报表,和只看单次成功率的评估报告,是同一种错误。
+- 贯穿四层的纪律:**均值会撒谎**。步数与成本是重尾分布,少量长尾任务吃掉大部分预算;只看均值的成本报表,和只看单次成功率的评估报告,是同一种错误。
 
 **从"能看"到"能改"**:trace 不是终点,而是**评估数据集的主要来源**。生产 trace → 分层采样(失败/低分/接管样本全量进候选池)→ 人工标注 → 沉淀为 eval case → 进回归集。这条回流线是可观测性投资回报最高的部分,也是 Q5 的入口。埋点做了却没有回流线的团队,买的是仪表盘,不是改进能力。
 
@@ -249,19 +244,15 @@ trace: user_turn            {session_id, user_id, agent_version, prompt_version}
 
 ```python
 with tracer.start_as_current_span("invoke_agent") as agent_span:
-    agent_span.set_attributes({
-        "gen_ai.agent.name": "main", "gen_ai.request.model": model_id,
-        "app.agent_version": AGENT_VER, "app.prompt_version": PROMPT_VER,  # 归因用
-    })
+    agent_span.set_attributes({"gen_ai.agent.name": "main", "gen_ai.request.model": model_id,
+        "app.agent_version": AGENT_VER, "app.prompt_version": PROMPT_VER})   # 归因三元组
     while not done and steps < MAX_STEPS:
         with tracer.start_as_current_span("llm_call") as s:
             resp = client.messages.create(...)
-            s.set_attributes({
-                "gen_ai.usage.input_tokens": resp.usage.input_tokens,
+            s.set_attributes({"gen_ai.usage.input_tokens": resp.usage.input_tokens,
                 "gen_ai.usage.output_tokens": resp.usage.output_tokens,
                 "gen_ai.usage.cache_read_input_tokens": resp.usage.cache_read_input_tokens,
-                "gen_ai.response.finish_reasons": [resp.stop_reason],
-            })
+                "gen_ai.response.finish_reasons": [resp.stop_reason]})
         for call in tool_calls(resp):
             with tracer.start_as_current_span("execute_tool") as t:
                 t.set_attributes({"gen_ai.tool.name": call.name,
@@ -275,8 +266,7 @@ with tracer.start_as_current_span("invoke_agent") as agent_span:
 **边界与误区**:
 - 误区:只记 LLM 调用,不记工具执行。生产 agent 的失败大头在工具与环境(超时、权限、脏数据、返回过长被截断),漏掉这层等于没埋点。
 - 误区:把 trace 当日志人肉翻。规模上来后必须有聚合视图:按失败类型 × 工具 × 版本切片,看的是分布不是个例。
-- 误区:全量存 prompt 全文。合规风险 + 存储成本双杀;采样 + 脱敏 + 失败全存是标准配方。
-- 误区:用平均延迟做 SLO。agent 延迟长尾极重,SLO 要挂 P95/P99,并对"步数超限"单独设指标。
+- 误区:全量存 prompt 全文(合规风险 + 存储成本双杀);采样 + 脱敏 + 失败全存是标准配方。用平均延迟做 SLO 同理错——agent 延迟长尾极重,SLO 要挂 P95/P99。
 - 边界:采样必然丢罕见失败。**安全类事件(护栏触发、权限拒绝、注入检测命中)必须 100% 记录,不进采样池**。
 - 边界:trace 只解释"发生了什么",不解释"为什么这么决策"。要理解决策,需要把 thinking 内容与当时的完整上下文一起留存(注意这又是 PII 与成本的权衡)。
 
