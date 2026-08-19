@@ -20,20 +20,20 @@
 
 - [Claude Agent SDK](02-frameworks/claude-agent-sdk.md) — Anthropic 官方 agent 框架,Claude Code 同源内核(stub)
 - [OpenAI Agents SDK](02-frameworks/openai-agents-sdk.md) — OpenAI 官方 agent 框架(Swarm 后继)(stub)
-- [LangGraph](02-frameworks/langgraph.md) — 图编排框架(stub)
+- [LangGraph](02-frameworks/langgraph.md) — 图编排框架(growing)
 - [Google ADK](02-frameworks/google-adk.md) — Google Agent Development Kit(stub)
 - [其他框架盘点](02-frameworks/other-frameworks.md) — CrewAI(角色协作)、AG2/AutoGen(对话式多 agent)、smolagents(代码即行动)、PydanticAI(类型安全)、Vercel AI SDK(前端全栈)等的定位与活跃度(stub)
 - [框架选型](02-frameworks/framework-selection.md) — 选型决策树(stub)
 
 ## 03-protocols 协议
 
-- [MCP(Model Context Protocol)](03-protocols/mcp.md) — 工具/资源接入的事实标准(stub)
-- [A2A(Agent2Agent)](03-protocols/a2a.md) — agent 间互操作协议(Google 发起,Linux Foundation 托管)(stub)
+- [MCP(Model Context Protocol)](03-protocols/mcp.md) — 工具/资源接入的事实标准(growing)
+- [A2A(Agent2Agent)](03-protocols/a2a.md) — agent 间互操作协议(Google 发起,Linux Foundation 托管)(growing)
 - [新兴协议](03-protocols/emerging-protocols.md) — 支付(AP2、x402)、身份、发现(AGNTCY)、站点声明(llms.txt、agents.md)等围绕 agent 互操作的新协议观察哨(stub)
 
 ## 04-multi-agent 多智能体
 
-- [多智能体编排模式](04-multi-agent/orchestration-patterns.md) — supervisor(中心调度)、swarm/handoff(去中心)、pipeline(流水线)、debate/panel(对抗评审)诸模式的机制、适用与失败模式(stub)
+- [多智能体编排模式](04-multi-agent/orchestration-patterns.md) — supervisor(中心调度)、swarm/handoff(去中心)、pipeline(流水线)、debate/panel(对抗评审)诸模式的机制、适用与失败模式(growing)
 - [Subagents 子代理](04-multi-agent/subagents.md) — 上下文隔离的核心手段(stub)
 - [Handoffs 与通信](04-multi-agent/handoffs-communication.md) — agent 间转交与消息(stub)
 
@@ -51,7 +51,7 @@
 
 ## 07-safety-security 安全
 
-- [Prompt Injection 攻防](07-safety-security/prompt-injection.md) — agent 最大的安全威胁(stub)
+- [Prompt Injection 攻防](07-safety-security/prompt-injection.md) — agent 最大的安全威胁(growing)
 - [沙箱与隔离](07-safety-security/sandboxing.md) — agent 执行环境隔离(stub)
 - [权限与 Human-in-the-Loop](07-safety-security/permissions-hitl.md) — 最小权限、行动分级(只读/可逆/不可逆)、审批流设计、durable authorization 的边界(stub)
 
@@ -63,14 +63,14 @@
 
 ## 09-coding-agents 编码代理
 
-- [Claude Code](09-coding-agents/claude-code.md) — 终端/IDE/云端的编码 agent(stub)
-- [其他编码代理](09-coding-agents/other-coding-agents.md) — Codex(CLI/云)、Cursor(IDE+background)、Copilot(agent mode)、Gemini CLI、OpenHands、Devin、Amp 等的形态与差异化(stub)
+- [Claude Code](09-coding-agents/claude-code.md) — 终端/IDE/云端的编码 agent(growing)
+- [其他编码代理](09-coding-agents/other-coding-agents.md) — Codex(CLI/云)、Cursor(IDE+background)、Copilot(agent mode)、Gemini CLI、OpenHands、Devin、Amp 等的形态与差异化(growing)
 - [自主软件工程](09-coding-agents/autonomous-swe.md) — long-running/background agents(stub)
 - [Harness 设计](09-coding-agents/harness-design.md) — 编码 agent 的"机箱"设计学(stub)
 
 ## 10-landscape 全景
 
-- [大事年表](10-landscape/timeline.md) — agent 领域大事记,按月倒序,每条一行(日期+事实+来源)(stub)
-- [模型能力快照](10-landscape/model-capabilities.md) — 主流模型的 agent 相关能力对比(as-of 快照,过时即整段重写)(stub)
-- [生态地图](10-landscape/ecosystem-map.md) — agent 生态分层地图(stub)
-- [研究前沿](10-landscape/research-frontiers.md) — 值得跟踪的研究方向(stub)
+- [大事年表](10-landscape/timeline.md) — agent 领域大事记,按月倒序,每条一行(日期+事实+来源)(growing)
+- [模型能力快照](10-landscape/model-capabilities.md) — 主流模型的 agent 相关能力对比(as-of 快照,过时即整段重写)(growing)
+- [生态地图](10-landscape/ecosystem-map.md) — agent 生态分层地图(growing)
+- [研究前沿](10-landscape/research-frontiers.md) — 值得跟踪的研究方向(growing)
