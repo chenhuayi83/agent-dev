@@ -102,25 +102,19 @@ def verify_trajectory(traj):                              # 轨迹级:不变式 
 2. **验证器优先**:最被低估的一条——**能程序化就绝不用 judge**。judge 应该只出现在"无法写断言"的维度上。很多团队 judge 用得多,只是因为没花时间把成功定义写成代码。
 3. **judge 可审计化**:强制 judge 输出结构化判据(引用轨迹中的 span id / 原文片段)再给结论,而不是只吐一个分数。好处是双份的:人能复核,且"先证据后结论"本身就降低了随口打分的比例。
 
-**成本视角**:大规模评估里 judge 的调用量可能超过被测 agent 本身。分层过滤是标准解:程序化规则先筛掉能判定的 → judge 只跑剩余争议样本 → 人工只看 judge 低置信/双向不一致的样本。
-
 **实例**(judge 从 v0 到 v2 的演进,以及校准脚本骨架):
 
 ```
-v0(反面教材):"给这个回答的质量打 1-10 分。"        # 无锚点、无维度、无证据
-v1:拆维度 + 二元判定 + 先证据后结论
-    "判断该回答是否包含未被检索结果支持的陈述。
-     步骤:1) 逐句列出事实性陈述;2) 标注每句对应的证据片段 id,无证据则标 NONE;
-     3) 输出 {unsupported: [...], verdict: 'supported'|'unsupported'}"
+v0(反面教材):"给这个回答的质量打 1-10 分。"          # 无锚点、无维度、无证据
+v1(拆维度 + 二元判定 + 先证据后结论):"判断该回答是否包含未被检索结果支持的陈述。
+   1) 逐句列出事实性陈述;2) 标注每句对应的证据片段 id,无证据标 NONE;
+   3) 输出 {unsupported:[...], verdict:'supported'|'unsupported'}"
 v2:v1 + 用 400 条人工标注微调评估器,κ 从 0.58 → 0.79(示意值,须自测)
-```
 
-```python
-# 校准脚本骨架:先测量具,再用量具
-rows = [(g.label, judge(g.input)) for g in golden_set]           # 与人对齐
+# 校准骨架:先测量具,再用量具
+rows = [(g.label, judge(g.input)) for g in golden_set]                     # 与人对齐
 kappa = cohen_kappa([h for h, _ in rows], [j for _, j in rows])
-self_consistency = mean(len(set(judge(g.input) for _ in range(3))) == 1
-                        for g in golden_set)                      # 自一致性
+self_cons = mean(len({judge(g.input) for _ in range(3)}) == 1 for g in golden_set)
 assert kappa >= HUMAN_HUMAN_KAPPA * 0.9, "judge 未达标,不得用于门禁"
 ```
 
@@ -129,7 +123,7 @@ assert kappa >= HUMAN_HUMAN_KAPPA * 0.9, "judge 未达标,不得用于门禁"
 - 误区:用被测的同一个模型、同一个提示词做 judge——自证清白,尤其在"回答是否完整/是否有幻觉"这类共享盲点维度上。
 - 误区:换了 judge 模型后直接对比新旧分数。换 judge = 换量具,必须在锚定集上重新标定并说明换算关系,否则"质量提升"可能只是量具变松了。
 - 误区:rubric 越细越好。维度越多、档位越细,judge 自一致性掉得越快;宁可多个二元 judge,不要一个十档 judge。
-- 边界:安全与合规判定不能只靠 judge。高风险维度要规则 + 人工双保险,judge 至多做召回前置筛选。
+- 边界:安全与合规判定不能只靠 judge。高风险维度要规则 + 人工双保险,judge 至多做召回前置筛选;大规模评估里 judge 的调用量还可能超过被测 agent 本身,分层过滤(规则先筛 → judge 跑争议样本 → 人只看双向不一致样本)是标准解。
 
 **追问预判**:
 - 追问:"你怎么证明你的 judge 可信?" → 答:报三个数——与人类标注的 κ、judge 自一致性(重跑分歧率)、在已知失败样本上的召回率;并说明黄金集的抽样方式与难例配比。没有这三个数就直说"还没标定,所以只用于观察不用于门禁"。

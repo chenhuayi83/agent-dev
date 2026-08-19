@@ -194,7 +194,7 @@ nothing outside the task's scope changed. Report gaps, not style preferences.
 2. **单片可判定**:每片自己能验证(该文件的测试/typecheck 通过),否则你要跑完全量才知道错了;
 3. **失败可隔离**:一片失败不污染其他片——每片独立 commit,失败的记下来单独重跑。
 
-**官方 fan-out 骨架**:
+**实例**(官方 fan-out 骨架):
 
 ```bash
 # 1. 先让 Claude 生成清单(它比你更知道哪些文件需要改)
@@ -247,7 +247,7 @@ done
 
 **先立好比较的边界。** 三家的模型可换且同代,公开基准的差距已经很小:Artificial Analysis Coding Agent Index(as-of 2026-05-18)Claude Code+Opus 4.7 = 66、Codex+GPT-5.5 = 65、Cursor Composer 2.5 = 62。这个分差**同时包含模型与 harness**,拆不开。能站得住的结论只有一条:**同代模型下 harness 是主要可操作变量**——而 harness 的取舍是可以客观描述的,这才是面试该讲的部分。
 
-**取舍轴对比**(as-of 2026-08-19,官方文档口径):
+**实例**:三家取舍轴对比(as-of 2026-08-19,官方文档口径):
 
 | 维度 | Claude Code | Codex | Cursor |
 |---|---|---|---|

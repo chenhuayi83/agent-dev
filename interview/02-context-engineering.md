@@ -111,8 +111,7 @@ system prompt 4,200 + project CLAUDE.md 1,800 + auto memory 680
 **实例**(可直接抄的保留清单骨架 + 两种触发方式):
 
 ```markdown
-<!-- CLAUDE.md -->
-## Compact Instructions
+<!-- CLAUDE.md -->  ## Compact Instructions
 压缩时必须逐字保留:
 1. 硬约束:不改 db/migrations/*;必须用 pnpm;禁止引入新依赖
 2. 已改文件清单(路径 + 一句话说明改了什么)
@@ -121,10 +120,7 @@ system prompt 4,200 + project CLAUDE.md 1,800 + auto memory 680
 5. 未完成待办(编号,注明当前卡在哪一步)
 不必保留:文件全文、通过的测试日志、已 commit 的 diff(保 commit hash 即可)
 ```
-
-```
-/compact 只保留 API 契约变更与未完成的迁移步骤
-```
+一次性定制则是:`/compact 只保留 API 契约变更与未完成的迁移步骤`。
 
 **边界与误区**:
 - 误区:"compaction 是压缩算法"。它是**再生成**不是无损编码;把它当 gzip 想会系统性低估风险。
@@ -254,11 +250,9 @@ system prompt 4,200 + project CLAUDE.md 1,800 + auto memory 680
 **实例**(一次真实定位的收敛过程,以及它的 token 账):
 
 ```bash
-rg -l "refreshToken" --type ts          # 1) 缩范围:得到 6 个文件路径      ≈ 200 tokens
-rg -n "refreshToken" src/auth/token.ts  # 2) 定位:拿到行号 120-180        ≈ 150 tokens
-# 3) 只读命中区间,不读整文件
-#    Read(src/auth/token.ts, offset=110, limit=90)                        ≈ 900 tokens
-#    对照:整文件读入                                                      ≈ 2,400 tokens
+rg -l "refreshToken" --type ts           # 缩范围:6 个文件路径        ≈  200 tokens
+rg -n "refreshToken" src/auth/token.ts   # 定位:行号 120-180          ≈  150 tokens
+# 只读命中区间 Read(token.ts, offset=110, limit=90) ≈ 900;整文件读入 ≈ 2,400 tokens
 ```
 
 同一问题若走向量 RAG:要先嵌入整库、按函数分块、维护更新;返回的 top-k chunk 可能命中 `renewSession`(语义近但不是要找的),而且**不给行号**——agent 仍要再读一次文件确认。
@@ -335,12 +329,9 @@ rg -n "refreshToken" src/auth/token.ts  # 2) 定位:拿到行号 120-180        
 
 ```python
 resp = client.messages.create(...)
-if resp.stop_reason == "refusal":
-    handle_refusal(resp)          # 1) 拒答:输出可能完全不合 schema
-elif resp.stop_reason == "max_tokens":
-    retry_with_more_tokens()      # 2) 截断:合法前缀 ≠ 完整对象
-else:
-    validate_semantics(parse(resp))   # 3) 结构合法后,语义仍需校验
+if   resp.stop_reason == "refusal":    handle_refusal(resp)        # 1) 拒答:可能完全不合 schema
+elif resp.stop_reason == "max_tokens": retry_with_more_tokens()    # 2) 截断:合法前缀 ≠ 完整对象
+else:                                  validate_semantics(parse(resp))  # 3) 结构合法后仍需语义校验
 ```
 
 **边界与误区**:
@@ -399,12 +390,9 @@ else:
 ```
 ✗ "用 subagent 调查一下认证模块"
    → 范围无界、返回格式未定;可能读了 40 个文件,回来一段泛泛而谈
-
 ✓ "用 subagent 调查:token 刷新在哪里实现、是否已有可复用的 OAuth 工具。
-   范围限于 src/auth/ 与 src/lib/;返回格式:
-   1) 结论(≤10 行)
-   2) 证据:文件路径 + 行号区间
-   3) 没找到或不确定的点(必填,没有就写'无')"
+   范围限于 src/auth/ 与 src/lib/;返回格式:1) 结论(≤10 行)
+   2) 证据:文件路径 + 行号区间 3) 没找到或不确定的点(必填,没有就写'无')"
 ```
 
 判据自查表:
