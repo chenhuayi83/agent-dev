@@ -7,7 +7,7 @@
 
 - [01 Agent 基础](01-agent-fundamentals.md) — agent 定义、agent loop、tool use 机制、ReAct 演化、长任务上下文管理(5 题,2026-08-19)
 - 02 上下文工程组 — 待产出(队列 P2)
-- 03 MCP 与协议组 — 待产出(队列 P5)
+- [03 MCP 与协议组](03-mcp-protocols.md) — MCP 架构与原语、2026-07-28 stateless 改版与迁移、MCP/A2A/Agent Plugins 分工、安全风险分层、transport 选型、server 设计(6 题,2026-08-19)
 - 04 多智能体组 — 待产出(队列 P8)
 - 05 记忆系统组 / 06 评估组 — 待产出(队列 P12)
 - 07 安全注入组 / 08 生产化组 — 待产出(队列 P15)

@@ -32,7 +32,7 @@
 |---|---|---|
 | openai/openai-agents-python releases | WebFetch https://github.com/openai/openai-agents-python/releases | |
 | langchain-ai/langgraph releases | WebFetch https://github.com/langchain-ai/langgraph/releases | |
-| google/adk-python releases | WebFetch https://github.com/google/adk-python/releases | |
+| google/adk-python releases | WebFetch https://github.com/google/adk-python/releases | 文档站已迁 adk.dev(旧 google.github.io/adk-docs 301,2026-08-19 核实) |
 | anthropics/claude-agent-sdk-python releases | WebFetch https://github.com/anthropics/claude-agent-sdk-python/releases | |
 | SWE-bench 榜单 | WebFetch https://www.swebench.com/ | |
 
