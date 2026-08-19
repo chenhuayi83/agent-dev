@@ -4,8 +4,14 @@
   "run_count": 1,
   "pending": [],
   "current_deep_dive": null,
-  "recent_new_items": [12],
-  "counters": {"briefings": 1, "deep_dives": 1, "experiments": 0},
-  "last_merge_ok": null,
+  "recent_new_items": [
+    12
+  ],
+  "counters": {
+    "briefings": 1,
+    "deep_dives": 1,
+    "experiments": 0
+  },
+  "last_merge_ok": true,
   "source_rotation_cursor": 0
 }
