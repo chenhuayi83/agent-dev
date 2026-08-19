@@ -36,6 +36,18 @@
 | anthropics/claude-agent-sdk-python releases | WebFetch https://github.com/anthropics/claude-agent-sdk-python/releases | |
 | SWE-bench 榜单 | WebFetch https://www.swebench.com/ | |
 
+## D 层(中文视角 / 面试覆盖面对标,非每日扫描)
+
+> 用途:对标国内 AI 岗位面试的**考点覆盖面**,发现本仓库题库的盲区。**不抓取、不复制其内容**(宪法 C6),只看栏目结构判断缺口,题目自主撰写。
+> 建议频率:月度体检一次,或用户点名时。
+
+| 名称 | URL/方法 | 用途 | 最近使用 |
+|---|---|---|---|
+| 小林面试笔记(AI) | WebFetch https://xiaolinnote.com/ai/ | 国内 AI 面试题覆盖面基准:Agent 16 题 / RAG 20 题 / LLM 工具调用 16 题 / 大模型工程 22 题 / LangChain 12 题 | 2026-08-19(用户提供) |
+| 小林 cnblogs | WebFetch https://www.cnblogs.com/xiaolincoding/p/20534325 | 同上的公开介绍页,含题目大类清单 | 2026-08-19(用户提供) |
+
+**2026-08-19 首次对标结论**:本仓库题库偏"2026 前沿 + agent 应用工程",缺国内面试基本盘——RAG 专题(已补 11 组)、大模型底层工程(已补 12 组)、框架实操(已并入 09 组)。反向优势:MCP 新 spec、多智能体失败模式、基准失效、编码代理实战等前沿内容为对方所无。
+
 ## 兜底 WebSearch 模板
 
 - `AI agent framework release <当月英文>`
